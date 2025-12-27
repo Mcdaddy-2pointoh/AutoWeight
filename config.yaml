@@ -1,0 +1,75 @@
+config:
+  data_path:
+    ticker_list:
+      directory: "base_path/01_raw/ohlcv/tickers"
+      file_name: "tickers_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+
+    ticker_data_open:
+      directory: "base_path/01_raw/ohlcv/open"
+      file_name: "open_data_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+
+    ticker_data_high:
+      directory: "base_path/01_raw/ohlcv/high"
+      file_name: "high_data_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+
+    ticker_data_low:
+      directory: "base_path/01_raw/ohlcv/low"
+      file_name: "low_data_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+
+    ticker_data_close:
+      directory: "base_path/01_raw/ohlcv/close"
+      file_name: "close_data_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+
+    ticker_data_volume:
+      directory: "base_path/01_raw/ohlcv/volume"
+      file_name: "volume_data_yfinance"
+      file_format: "csv"
+      versioned: TRUE
+      
+    correlation_matrix:
+      directory: "base_path/02_processed"
+      file_name: "correlation_matrix"
+      file_format: "csv"
+      versioned: TRUE
+
+  data:
+
+    # Tickers must be yfin compliant
+    tickers:
+      - HDFCSML250.NS
+      - HDFCGOLD.NS
+      - HDFCNEXT50.NS
+    
+    # Must be less than 3 years
+    window_in_days: 365
+    vix: ^INDIAVIX
+
+  parameters:
+    correlation:
+
+      # Method of correlation ot use
+      method: pearson # OPTIONAL: kendall | spearman
+      
+      # Metric to see the correlation in
+      metrics:
+        - open
+        - high
+        - low
+        - close
+        - volume
+
+      # Threshold of Correlation to set 
+      # Values lower than this would be treated as inversely correlated
+      inverse_threshold: -0.60
+
+      
