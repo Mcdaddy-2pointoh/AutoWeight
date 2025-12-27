@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Venv
+autoweight-venv
+
+# Accumalated Data
+data
+
 # Distribution / packaging
 .Python
 build/
