@@ -1,0 +1,237 @@
+from pathlib import Path
+import yaml
+from datetime import datetime
+import pandas as pd
+import re
+import os
+
+
+# Config Loading Segment
+class ConfigLoadError(Exception):
+    """Raised when a YAML configuration file cannot be loaded."""
+
+def load_yaml(path: str | Path) -> dict:
+    """
+    Function: Load and return the contents of a YAML file.
+    Args:
+        path (str | Path): The file path poining to the YAML file
+    Returns:
+        Dictionary containing the contents of the YAML file
+    """
+    path = Path(path)
+
+    # Try to load the yaml file using safe load
+    try:
+        with path.open("r") as f:
+            return yaml.safe_load(f)
+
+    # Raise exceptions
+    except FileNotFoundError as e:
+        raise ConfigLoadError(f"Config file not found: {path}") from e
+
+    except PermissionError as e:
+        raise ConfigLoadError(f"Permission denied reading config file: {path}") from e
+
+    except yaml.YAMLError as e:
+        raise ConfigLoadError(f"Invalid YAML syntax in config file: {path}") from e
+
+    except Exception as e:
+        raise ConfigLoadError(
+            f"Unexpected error while loading config file: {path}"
+        ) from e
+
+
+# Data frame saving segment
+class DataFrameSaveError(Exception):
+    """Raised when saving a DataFrame fails."""
+
+def save_dataframe(
+    df: pd.DataFrame,
+    directory: str | Path,
+    file_name: str,
+    file_format: str = "csv",
+    versioned: bool = False,
+    timestamp_format: str = "%Y%m%d_%H%M%S",
+    save_index: bool = False,
+    **kwargs,
+) -> Path:
+    """
+    Save a pandas DataFrame to disk with optional timestamp versioning.
+    Automatically creates the directory path if it does not exist.
+
+    Args:
+        df (pd.DataFrame): pandas DataFrame to save
+        directory (str | Path): directory path to save the file
+        file_name (str): base file name without extension
+        file_format (str): one of {'csv', 'excel', 'parquet'}
+        versioned (bool): if True, append timestamp to filename
+        timestamp_format (str): datetime format for versioning
+        save_index (bool): Save data with index
+        **kwargs: passed to pandas writer (e.g. index=False)
+
+    Returns:
+        Path to the saved file
+    """
+
+    try:
+        # Validate the dataframe and the directory
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("df must be a pandas DataFrame")
+
+        directory = Path(directory)
+
+        if directory.exists() and not directory.is_dir():
+            raise NotADirectoryError(
+                f"Path exists but is not a directory: {directory}"
+            )
+
+        # Create directory tree if missing
+        directory.mkdir(parents=True, exist_ok=True)
+
+        file_format = file_format.lower()
+        allowed_formats = {"csv", "excel", "parquet"}
+
+        if file_format not in allowed_formats:
+            raise ValueError(
+                f"file_format must be one of {allowed_formats}, got '{file_format}'"
+            )
+
+        # Construct suitable file name 
+        timestamp = (
+            datetime.now().strftime(timestamp_format) if versioned else ""
+        )
+
+        suffix = f"_{timestamp}" if timestamp else ""
+
+        extension_map = {
+            "csv": ".csv",
+            "excel": ".xlsx",
+            "parquet": ".parquet",
+        }
+
+        file_path = directory / f"{file_name}{suffix}{extension_map[file_format]}"
+
+        # Save in specified format
+        if file_format == "csv":
+            df.to_csv(file_path, index=save_index,**kwargs)
+
+        elif file_format == "excel":
+            df.to_excel(file_path, index=save_index,**kwargs)
+
+        elif file_format == "parquet":
+            df.to_parquet(file_path, index=save_index,**kwargs)
+
+        return file_path
+
+    except Exception as e:
+        raise DataFrameSaveError(
+            f"Failed to save DataFrame '{file_name}' "
+            f"as {file_format} in directory {directory}"
+        ) from e
+    
+
+# DataFrame Loader Segment
+class DataFrameLoadError(Exception):
+    """Raised when loading a DataFrame fails."""
+
+def load_latest_dataframe(
+    directory: str | Path,
+    file_name: str,
+    file_format: str = "csv",
+    timestamp_format: str = "%Y%m%d_%H%M%S",
+    **kwargs,
+) -> pd.DataFrame:
+    """
+    Load the latest timestamp-versioned DataFrame from disk.
+
+    Expected filename format:
+        file_name_<timestamp>.<extension>
+
+    Args:
+        directory: directory where files are stored
+        file_name: base file name (without timestamp or extension)
+        file_format: one of {'csv', 'excel', 'parquet'}
+        timestamp_format: datetime format used in filenames
+        **kwargs: passed to pandas read_* functions
+
+    Returns:
+        pandas DataFrame
+    """
+
+    try:
+        directory = Path(directory)
+
+        # Validate extension, filepath
+        if not directory.exists() or not directory.is_dir():
+            raise FileNotFoundError(f"Directory does not exist: {directory}")
+
+        extension_map = {
+            "csv": ".csv",
+            "excel": ".xlsx",
+            "parquet": ".parquet",
+        }
+
+        file_format = file_format.lower()
+        if file_format not in extension_map:
+            raise ValueError(f"Unsupported file format: {file_format}")
+
+        extension = extension_map[file_format]
+
+        # Match to find files with correct time stamp
+        pattern = re.compile(
+            rf"^{re.escape(file_name)}_(.+){re.escape(extension)}$"
+        )
+
+        candidates: list[tuple[datetime, Path]] = []
+
+        for file in directory.iterdir():
+            match = pattern.match(file.name)
+            if not match:
+                continue
+
+            timestamp_str = match.group(1)
+
+            try:
+                timestamp = datetime.strptime(timestamp_str, timestamp_format)
+            except ValueError:
+                # Skip files with malformed timestamps
+                continue
+
+            candidates.append((timestamp, file))
+
+        # Set the latest file variable outside the if scope
+        latest_file = None
+
+        # If no candidates check if the file name exists 
+        if not candidates:
+            files_in_dir = os.listdir(directory)
+
+            # Select the file with plain name 
+            if file_name in files_in_dir:
+                latest_file = os.path.join(directory, f"{file_name}.{extension}")
+
+            # Else raise error
+            else:
+                raise FileNotFoundError(
+                    f"No versioned files found for '{file_name}' in {directory}"
+                )
+
+        # Pick latest candidate
+        else:
+            # Select the latest file
+            latest_file = max(candidates, key=lambda x: x[0])[1]
+
+        # Load the latest file
+        if file_format == "csv":
+            return pd.read_csv(latest_file, **kwargs)
+
+        elif file_format == "excel":
+            return pd.read_excel(latest_file, **kwargs)
+
+        elif file_format == "parquet":
+            return pd.read_parquet(latest_file, **kwargs)
+
+    except Exception as e:
+        raise DataFrameLoadError(
+            f"Failed to load latest DataFrame '{file_name}' from {directory}"
+        ) from e
