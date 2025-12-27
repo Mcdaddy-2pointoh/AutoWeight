@@ -11,7 +11,7 @@ autoweight-venv
 
 # Accumalated Data
 data
-config.yaml
+config-sd.yaml
 
 # Distribution / packaging
 .Python
