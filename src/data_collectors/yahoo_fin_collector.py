@@ -178,6 +178,7 @@ def fetch_data(
 
         if verbose:
             print(format_success_text(f"Successfully processed data for ticker: {ticker}"))
+            print("")
 
     if save_data:
 
