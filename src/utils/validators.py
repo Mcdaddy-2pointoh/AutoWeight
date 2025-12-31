@@ -1,63 +1,111 @@
-def validate_correlation_config(config: dict) -> None:
-    """
-    Validate correlation configuration dictionary.
+from typing import Dict, Any, List
 
-    Expected schema:
-        {
-            "method": str in {"pearson", "kendall", "spearman"},
-            "metrics": str | list[str] subset of allowed metrics,
-            "inverse_threshold": float between -1 and 1
-        }
+
+class ConfigValidationError(ValueError):
+    """Raised when correlation config validation fails."""
+
+
+def validate_correlation_config(config: Dict[str, Any]) -> None:
+    """
+    Validate correlation configuration parameters.
 
     Raises:
-        ValueError: If validation fails
+        ConfigValidationError
     """
 
-    if not isinstance(config, dict):
-        raise ValueError(f"config must be a dict, got {type(config).__name__}")
+    # --------------------
+    # Required top-level keys
+    # --------------------
+    required_keys = {
+        "method",
+        "metrics",
+        "filter",
+        "min_observations",
+        "optimization_strategy",
+    }
 
-    # Validate the method param
+    missing = required_keys - config.keys()
+    if missing:
+        raise ConfigValidationError(f"Missing keys: {missing}")
+
+    # --------------------
+    # method
+    # --------------------
     allowed_methods = {"pearson", "kendall", "spearman"}
-    method = config.get("method")
-
-    if not isinstance(method, str):
-        raise ValueError("`method` must be a string")
+    method = config["method"]
 
     if method not in allowed_methods:
-        raise ValueError(
-            f"`method` must be one of {sorted(allowed_methods)}, got '{method}'"
+        raise ConfigValidationError(
+            f"method must be one of {allowed_methods}, got '{method}'"
         )
 
-    # Validate the metric param
+    # --------------------
+    # metrics
+    # --------------------
+    metrics = config["metrics"]
+
+    if not isinstance(metrics, list) or not metrics:
+        raise ConfigValidationError("metrics must be a non-empty list")
+
     allowed_metrics = {"open", "high", "low", "close", "volume"}
-    metrics = config.get("metrics")
-
-    if isinstance(metrics, str):
-        metrics = [metrics]
-    elif not isinstance(metrics, list):
-        raise ValueError("`metrics` must be a string or a list of strings")
-
-    if not metrics:
-        raise ValueError("`metrics` cannot be empty")
-
-    if not all(isinstance(m, str) for m in metrics):
-        raise ValueError("All values in `metrics` must be strings")
-
     invalid_metrics = set(metrics) - allowed_metrics
+
     if invalid_metrics:
-        raise ValueError(
-            f"Invalid metrics {sorted(invalid_metrics)}. "
-            f"Allowed metrics are {sorted(allowed_metrics)}"
+        raise ConfigValidationError(
+            f"Invalid metrics {invalid_metrics}. Allowed: {allowed_metrics}"
         )
 
-    # Validate the inverse threshold value
-    inverse_threshold = config.get("inverse_threshold")
+    # --------------------
+    # filter block
+    # --------------------
+    filter_cfg = config["filter"]
 
-    if not isinstance(inverse_threshold, float):
-        raise ValueError("`inverse_threshold` must be a float")
+    if not isinstance(filter_cfg, dict):
+        raise ConfigValidationError("filter must be a dictionary")
 
-    if not -1.0 <= inverse_threshold <= 1.0:
-        raise ValueError("`inverse_threshold` must be between -1 and 1")
+    required_filter_keys = {
+        "filter_n_pairs",
+        "top_n_pairs",
+        "filter_inverse_threshold",
+        "inverse_threshold",
+    }
 
-    # ---- success ----
-    return True
+    missing_filter = required_filter_keys - filter_cfg.keys()
+    if missing_filter:
+        raise ConfigValidationError(f"Missing filter keys: {missing_filter}")
+
+    if not isinstance(filter_cfg["filter_n_pairs"], bool):
+        raise ConfigValidationError("filter_n_pairs must be boolean")
+
+    if not isinstance(filter_cfg["top_n_pairs"], int) or filter_cfg["top_n_pairs"] <= 0:
+        raise ConfigValidationError("top_n_pairs must be a positive integer")
+
+    if not isinstance(filter_cfg["filter_inverse_threshold"], bool):
+        raise ConfigValidationError("filter_inverse_threshold must be boolean")
+
+    inverse_threshold = filter_cfg["inverse_threshold"]
+    if not isinstance(inverse_threshold, (int, float)) or not -1 <= inverse_threshold <= 1:
+        raise ConfigValidationError(
+            "inverse_threshold must be a number between -1 and 1"
+        )
+
+    # --------------------
+    # min_observations
+    # --------------------
+    min_obs = config["min_observations"]
+
+    if not isinstance(min_obs, int) or min_obs <= 1:
+        raise ConfigValidationError(
+            "min_observations must be an integer > 1"
+        )
+
+    # --------------------
+    # optimization_strategy
+    # --------------------
+    allowed_strategies = {"negative", "low"}
+    strategy = config["optimization_strategy"]
+
+    if strategy not in allowed_strategies:
+        raise ConfigValidationError(
+            f"optimization_strategy must be one of {allowed_strategies}, got '{strategy}'"
+        )
