@@ -52,6 +52,7 @@ def save_dataframe(
     file_format: str = "csv",
     versioned: bool = False,
     timestamp_format: str = "%Y%m%d_%H%M%S",
+    suffix: str | None = None,
     save_index: bool = False,
     **kwargs,
 ) -> Path:
@@ -96,12 +97,10 @@ def save_dataframe(
                 f"file_format must be one of {allowed_formats}, got '{file_format}'"
             )
 
-        # Construct suitable file name 
+        # Construct suitable file name
         timestamp = (
-            datetime.now().strftime(timestamp_format) if versioned else ""
+            datetime.now().strftime(timestamp_format) if versioned else None
         )
-
-        suffix = f"_{timestamp}" if timestamp else ""
 
         extension_map = {
             "csv": ".csv",
@@ -109,17 +108,28 @@ def save_dataframe(
             "parquet": ".parquet",
         }
 
-        file_path = directory / f"{file_name}{suffix}{extension_map[file_format]}"
+        name_parts = [file_name]
+
+        if suffix:
+            name_parts.append(suffix)
+
+        if timestamp:
+            name_parts.append(timestamp)
+
+        file_path = (
+            directory
+            / f"{'_'.join(name_parts)}{extension_map[file_format]}"
+        )
 
         # Save in specified format
         if file_format == "csv":
-            df.to_csv(file_path, index=save_index,**kwargs)
+            df.to_csv(file_path, index=save_index, **kwargs)
 
         elif file_format == "excel":
-            df.to_excel(file_path, index=save_index,**kwargs)
+            df.to_excel(file_path, index=save_index, **kwargs)
 
         elif file_format == "parquet":
-            df.to_parquet(file_path, index=save_index,**kwargs)
+            df.to_parquet(file_path, index=save_index, **kwargs)
 
         return file_path
 
@@ -128,7 +138,7 @@ def save_dataframe(
             f"Failed to save DataFrame '{file_name}' "
             f"as {file_format} in directory {directory}"
         ) from e
-    
+
 
 # DataFrame Loader Segment
 class DataFrameLoadError(Exception):
@@ -139,6 +149,7 @@ def load_latest_dataframe(
     file_name: str,
     file_format: str = "csv",
     timestamp_format: str = "%Y%m%d_%H%M%S",
+    suffix: str | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -178,9 +189,14 @@ def load_latest_dataframe(
         extension = extension_map[file_format]
 
         # Match to find files with correct time stamp
-        pattern = re.compile(
-            rf"^{re.escape(file_name)}_(.+){re.escape(extension)}$"
-        )
+        if suffix is None:
+            pattern = re.compile(
+                rf"^{re.escape(file_name)}_(?P<ts>.+){re.escape(extension)}$"
+            )
+        else:
+            pattern = re.compile(
+                rf"^{re.escape(file_name)}_{re.escape(suffix)}_(?P<ts>.+){re.escape(extension)}$"
+            )
 
         candidates: list[tuple[datetime, Path]] = []
 
@@ -189,7 +205,7 @@ def load_latest_dataframe(
             if not match:
                 continue
 
-            timestamp_str = match.group(1)
+            timestamp_str = match.group("ts")
 
             try:
                 timestamp = datetime.strptime(timestamp_str, timestamp_format)
@@ -202,13 +218,14 @@ def load_latest_dataframe(
         # Set the latest file variable outside the if scope
         latest_file = None
 
-        # If no candidates check if the file name exists 
+        # If no candidates check if the file name exists
         if not candidates:
             files_in_dir = os.listdir(directory)
 
-            # Select the file with plain name 
-            if file_name in files_in_dir:
-                latest_file = os.path.join(directory, f"{file_name}.{extension}")
+            # Select the file with plain name
+            plain_file = f"{file_name}{extension}"
+            if plain_file in files_in_dir:
+                latest_file = directory / plain_file
 
             # Else raise error
             else:
@@ -235,3 +252,53 @@ def load_latest_dataframe(
         raise DataFrameLoadError(
             f"Failed to load latest DataFrame '{file_name}' from {directory}"
         ) from e
+    
+def create_directory_structure(path: str):
+    """
+    Function: Accepts a path to a base directory and creates all intermediate folders
+    Args:
+        path (str | Path): The path to the base directory
+    """
+
+    # Convert the string to path
+    path = Path(path)
+    print(f"INFO: Creating Base Directory")
+
+    # Check if directory exists
+    if path.exists():
+        print(f"Base Directory path exists: {str(path)}")
+
+    # Create directory + all intermediate parents (safe)
+    else:
+        path.mkdir(parents=True, exist_ok=True)
+        print(f"Base Directory path created at: {str(path)}")
+
+    print(f"Creating Sub Directories")
+
+    # Create sub directories
+    sub_directories = [
+
+        # Raw Directories
+        "01_raw",
+        "02_processed",
+        "03_analysis"
+    ]
+
+    # for sub directories 
+    # Create all child directories
+    for sub_directory in sub_directories:
+
+        # Create a temp path to create sub directories
+        temp_path = path / sub_directory
+
+        # Create the sub directory
+        if temp_path.exists():
+            print(f"Sub Directory path exists: {str(temp_path)}")
+
+        # Create directory + all intermediate parents (safe)
+        else:
+            temp_path.mkdir(parents=True, exist_ok=True)
+            print(f"Sub Directory path created at: {str(temp_path)}")
+
+    # Logger for successful directory
+    print(f"Created all directories successfully")
