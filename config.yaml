@@ -57,7 +57,7 @@ config:
   parameters:
     correlation:
 
-      # Method of correlation ot use
+      # Method of correlation to use
       method: pearson # OPTIONAL: kendall | spearman
       
       # Metric to see the correlation in
@@ -68,8 +68,18 @@ config:
         - close
         - volume
 
-      # Threshold of Correlation to set 
-      # Values lower than this would be treated as inversely correlated
-      inverse_threshold: -0.60
+      # Number of top pairs to return
+      filter:
+        filter_n_pairs: TRUE
+        top_n_pairs: 10
+        filter_inverse_threshold: FALSE
+        inverse_threshold: -0.10
+
+
+      # Minimum obsv for corr
+      min_observations: 60
+
+      # Optimize to find equities for low, negative
+      optimization_strategy: low     
 
       
