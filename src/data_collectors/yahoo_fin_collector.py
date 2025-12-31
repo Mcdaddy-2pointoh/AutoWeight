@@ -9,7 +9,8 @@ from src.utils.text_operators import format_error_text, format_info_text, format
 
 def fetch_data(
         config_path: str | Path, 
-        save_data: bool = True
+        save_data: bool = True,
+        verbose: bool = False
     ) -> pd.DataFrame:
     
     """
@@ -43,7 +44,8 @@ def fetch_data(
     # For each ticker add the OHLCV value for a daily level
     for ticker in ohlcv_data['ticker_list']:
 
-        print(format_info_text(f"Downloading data for ticker: {ticker}"))
+        if verbose:
+            print(format_info_text(f"Downloading data for ticker: {ticker}"))
 
         # Load the OHLCV data
         try:
@@ -56,12 +58,14 @@ def fetch_data(
                 auto_adjust=False
             )
 
-            print(format_success_text(f"Successfully downloaded data for: {ticker}"))
+            if verbose:
+                print(format_success_text(f"Successfully downloaded data for: {ticker}"))
 
         except:
             print(format_error_text(f"Failed to load data for: {ticker}"))
 
-        print(format_info_text(f"Processing data for ticker: {ticker}"))
+        if verbose:
+            print(format_info_text(f"Processing data for ticker: {ticker}"))
 
         # Split the data frame into series
         open_temp_series = temp_df['Open'].copy(deep=True)
@@ -172,25 +176,18 @@ def fetch_data(
             del old_df
             del merged_df
 
-        print(format_success_text(f"Successfully processed data for ticker: {ticker}"))
+        if verbose:
+            print(format_success_text(f"Successfully processed data for ticker: {ticker}"))
 
     if save_data:
 
         # Log the process
-        print(format_info_text(f"Saving data for all tickers:"))
+        if verbose:
+            print(format_info_text(f"Saving data for all tickers:"))
         for idx, ticker in enumerate(ohlcv_data['ticker_list']):
-            print(format_info_text(f"   {idx+1}. {ticker}"))
 
-
-        # The keys to the save path
-        ohlcv_file_keys = {
-            "ticker_list" : "ticker_list",
-            "open": "ticker_data_open",
-            "high": "ticker_data_high",
-            "low": "ticker_data_low",
-            "close": "ticker_data_close",
-            "volume": "ticker_data_volume"
-        }
+            if verbose:
+                print(format_info_text(f"   {idx+1}. {ticker}"))
 
         # Convert all the keys to a dataframe
         ohlcv_data['ticker_list'] = pd.DataFrame(ohlcv_data['ticker_list'], columns=["ticker"])
@@ -200,7 +197,12 @@ def fetch_data(
 
             # Load the key dataframe
             # Load the key config 
-            file_key = ohlcv_file_keys[key] 
+            if key == "ticker_list":
+                file_key = "ticker_list"
+
+            else:
+                file_key = "ticker_data"
+
             df = ohlcv_data[key]
 
             # Save the dateframe
@@ -210,10 +212,12 @@ def fetch_data(
                 file_name=data_path_config[file_key]['file_name'],
                 file_format=data_path_config[file_key]['file_format'],
                 versioned=data_path_config[file_key]['versioned'],
+                suffix=key,
                 save_index=True
             )
 
-        print(format_success_text(f"Successfully saved data for tickers"))
+        if verbose:
+            print(format_success_text(f"Successfully saved data for tickers"))
         print(format_success_text(f"fetch_data pipeline run completed"))
         return ohlcv_data
 
