@@ -1,44 +1,56 @@
 config:
   data_path:
     ticker_list:
-      directory: "base_path/01_raw/ohlcv/tickers"
+      directory: "basepath/01_raw/ohlcv"
       file_name: "tickers_yfinance"
       file_format: "csv"
       versioned: TRUE
 
-    ticker_data_open:
-      directory: "base_path/01_raw/ohlcv/open"
-      file_name: "open_data_yfinance"
+    ticker_data:
+      directory: "basepath/01_raw/ohlcv"
+      file_name: "data_yfinance"
       file_format: "csv"
       versioned: TRUE
 
-    ticker_data_high:
-      directory: "base_path/01_raw/ohlcv/high"
-      file_name: "high_data_yfinance"
+    pct_change_matrix:
+      directory: "basepath/02_processed/pct_change"
+      file_name: "pct_change_matrix"
       file_format: "csv"
       versioned: TRUE
 
-    ticker_data_low:
-      directory: "base_path/01_raw/ohlcv/low"
-      file_name: "low_data_yfinance"
-      file_format: "csv"
-      versioned: TRUE
-
-    ticker_data_close:
-      directory: "base_path/01_raw/ohlcv/close"
-      file_name: "close_data_yfinance"
-      file_format: "csv"
-      versioned: TRUE
-
-    ticker_data_volume:
-      directory: "base_path/01_raw/ohlcv/volume"
-      file_name: "volume_data_yfinance"
-      file_format: "csv"
-      versioned: TRUE
-      
     correlation_matrix:
-      directory: "base_path/02_processed"
-      file_name: "correlation_matrix"
+      directory: "basepath/02_processed/correlation_matrix"
+      file_name: "correlation_edges"
+      file_format: "csv"
+      versioned: TRUE
+
+    valuation_input_matrix:      
+      directory: "basepath/02_processed/valuation_input_matrix"
+      file_name: "valuation_input_matrix"
+      file_format: "csv"
+      versioned: TRUE
+
+    valuation_scores_full_matrix:      
+      directory: "basepath/02_processed/valuation_scores_matrix"
+      file_name: "valuation_scores_matrix"
+      file_format: "csv"
+      versioned: TRUE
+
+    valuation_scores_latest_matrix:      
+      directory: "basepath/03_analysis/valuation/valuation_scores_latest_matrix"
+      file_name: "valuation_scores_matrix"
+      file_format: "csv"
+      versioned: TRUE
+
+    adjusted_pairs_matrix:
+      directory: "basepath/02_processed/adjusted_pairs"
+      file_name: "adjusted_pairs"
+      file_format: "csv"
+      versioned: TRUE
+
+    filtered_pairs_matrix:
+      directory: "basepath/03_analysis/correlation/filtered_pairs"
+      file_name: "filtered_pairs"
       file_format: "csv"
       versioned: TRUE
 
@@ -51,7 +63,7 @@ config:
       - HDFCNEXT50.NS
     
     # Must be less than 3 years
-    window_in_days: 365
+    window_in_days: 900
     vix: ^INDIAVIX
 
   parameters:
@@ -66,7 +78,7 @@ config:
         - high
         - low
         - close
-        - volume
+        - adj_close
 
       # Number of top pairs to return
       filter:
@@ -80,6 +92,25 @@ config:
       min_observations: 60
 
       # Optimize to find equities for low, negative
-      optimization_strategy: low     
+      optimization_strategy: negative
 
-      
+    valuation:
+
+      # Method to perform valuation
+      # Options are ['price_z_score', 'log_price_z_score', 'log_return_z_score', 'all']
+      method: log_return_z_score 
+
+      # Rolling Window to calculate the valuation for
+      window_in_days: 400
+
+      # Metric used to compute the valuation are
+      metric: adj_close
+
+      # Clip values
+      clip: 0
+
+      # Bounded Flag
+      apply_bounding: TRUE
+
+    portfolio_params:
+      number_of_securities: 10
