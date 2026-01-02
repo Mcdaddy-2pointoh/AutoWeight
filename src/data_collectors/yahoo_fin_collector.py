@@ -1,17 +1,20 @@
+# External imports
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import List, Union
 from pathlib import Path
-from src.utils.file_operators import load_yaml, save_dataframe
 from datetime import datetime, timedelta
+from typing import Dict
+
+# Internal imports
+from src.utils.file_operators import load_yaml, save_dataframe
 from src.utils.text_operators import format_error_text, format_info_text, format_success_text
 
 def fetch_data(
         config_path: str | Path, 
         save_data: bool = True,
         verbose: bool = False
-    ) -> pd.DataFrame:
+    ) -> Dict[str, pd.DataFrame]:
     
     """
     Function: Accepts and loads the config file from the specified path. Downloads the ticker level data and produces a version controlled dataframe of all the tickers metrics (OHLCV) 
@@ -38,7 +41,8 @@ def fetch_data(
         "high": None,
         "low": None,
         "close": None,
-        "volume": None
+        "volume": None,
+        "adj_close" : None
     }
 
     # For each ticker add the OHLCV value for a daily level
@@ -73,6 +77,7 @@ def fetch_data(
         high_temp_series = temp_df['High'].copy(deep=True)
         low_temp_series = temp_df['Low'].copy(deep=True)
         volume_temp_series = temp_df['Volume'].copy(deep=True)
+        adj_close_temp_series = temp_df['Adj Close'].copy(deep=True)
 
         # Convert the series to a dataframe 
         open_temp_df = pd.DataFrame(open_temp_series).rename(columns={'Open': ticker})
@@ -80,6 +85,7 @@ def fetch_data(
         high_temp_df = pd.DataFrame(high_temp_series).rename(columns={'High': ticker})
         low_temp_df = pd.DataFrame(low_temp_series).rename(columns={'Low': ticker})
         volume_temp_df = pd.DataFrame(volume_temp_series).rename(columns={'Volume': ticker})
+        adj_close_temp_df = pd.DataFrame(adj_close_temp_series).rename(columns={'Adj Close': ticker})
 
         # Check if open data frame is None
         # If none use the open_temp_df as a main df
@@ -172,6 +178,26 @@ def fetch_data(
                 left_index=True
             )
             ohlcv_data['volume'] = merged_df
+
+            del old_df
+            del merged_df
+
+
+        # Check if adj_close data frame is None
+        # If none use the adj_close_temp_df as a main df
+        # Else join using index 
+        if ohlcv_data['adj_close'] is None:
+            ohlcv_data['adj_close'] = adj_close_temp_df
+
+        else:
+            old_df = ohlcv_data['adj_close'].copy(deep=True)
+            merged_df = pd.merge(
+                left=old_df,
+                right=adj_close_temp_df,
+                right_index=True,
+                left_index=True
+            )
+            ohlcv_data['adj_close'] = merged_df
 
             del old_df
             del merged_df
