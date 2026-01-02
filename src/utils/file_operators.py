@@ -1,9 +1,13 @@
+# External Imports
 from pathlib import Path
 import yaml
 from datetime import datetime
 import pandas as pd
 import re
 import os
+
+# Local Imports
+from src.utils.text_operators import format_error_text, format_info_text, format_success_text
 
 
 # Config Loading Segment
@@ -253,7 +257,7 @@ def load_latest_dataframe(
             f"Failed to load latest DataFrame '{file_name}' from {directory}"
         ) from e
     
-def create_directory_structure(path: str):
+def create_directory_structure(path: str, verbose: bool = False):
     """
     Function: Accepts a path to a base directory and creates all intermediate folders
     Args:
@@ -262,18 +266,22 @@ def create_directory_structure(path: str):
 
     # Convert the string to path
     path = Path(path)
-    print(f"INFO: Creating Base Directory")
+    if verbose:
+        print(format_info_text(f"Creating Base Directory"))
 
     # Check if directory exists
     if path.exists():
-        print(f"Base Directory path exists: {str(path)}")
+        if verbose:
+            print(format_info_text(f"Base Directory path exists: {str(path)}"))
 
     # Create directory + all intermediate parents (safe)
     else:
         path.mkdir(parents=True, exist_ok=True)
-        print(f"Base Directory path created at: {str(path)}")
+        if verbose:
+            print(format_success_text(f"Base Directory path created at: {str(path)}"))
 
-    print(f"Creating Sub Directories")
+    if verbose:
+        print(format_info_text(f"Creating Sub Directories"))
 
     # Create sub directories
     sub_directories = [
@@ -293,12 +301,19 @@ def create_directory_structure(path: str):
 
         # Create the sub directory
         if temp_path.exists():
-            print(f"Sub Directory path exists: {str(temp_path)}")
+            if verbose:
+                print(format_info_text(f"Sub Directory path exists: {str(temp_path)}"))
 
         # Create directory + all intermediate parents (safe)
         else:
             temp_path.mkdir(parents=True, exist_ok=True)
-            print(f"Sub Directory path created at: {str(temp_path)}")
+
+            if verbose:
+                print(format_success_text(f"Sub Directory path created at: {str(temp_path)}"))
+
+        if verbose:
+            print()
 
     # Logger for successful directory
-    print(f"Created all directories successfully")
+    print(format_success_text(f"Created all directories successfully!"))
+    print()

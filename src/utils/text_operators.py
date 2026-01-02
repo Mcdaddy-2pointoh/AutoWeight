@@ -1,13 +1,10 @@
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
     OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
+    INFO = '\033[38;5;195m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    WARN = '\033[38;2;255;165;0m'
 
 def format_error_text(text: str) -> str:
     """
@@ -34,4 +31,13 @@ def format_info_text(text: str) -> str:
         text (str): The text to color as a INFO
     """
 
-    return f"""{bcolors.WARNING}INFO: {str(text)}{bcolors.ENDC}"""
+    return f"""{bcolors.INFO}INFO: {str(text)}{bcolors.ENDC}"""
+
+def format_warn_text(text: str) -> str:
+    """
+    Function: Produces a orange text with the input text
+    Args:
+        text (str): The text to color as a WARN
+    """
+
+    return f"""{bcolors.BOLD}{bcolors.WARN}WARN: {str(text)}{bcolors.ENDC}"""

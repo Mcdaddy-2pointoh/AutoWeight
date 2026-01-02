@@ -6,7 +6,7 @@ from itertools import combinations
 from typing import Dict
 
 # Specialised imports
-from src.utils.text_operators import format_error_text, format_info_text, format_success_text
+from src.utils.text_operators import format_error_text, format_info_text, format_success_text, format_warn_text
 from src.utils.file_operators import load_latest_dataframe, load_yaml, save_dataframe
 from src.utils.validators import validate_correlation_config
 
@@ -42,10 +42,8 @@ def calculate_correlation(
 
     # Load the config file
     config = load_yaml(Path(config_path))
-    data_config = config['config']['data']
     data_path_config = config['config']['data_path']
     correlation_parameters_config = config['config']['parameters']['correlation']
-    pairs = list(combinations(data_config['tickers'], 2))
 
     # Validate the config params
     try:
@@ -53,9 +51,12 @@ def calculate_correlation(
 
     except ValueError as e:
         print(format_error_text(f"""Correlation parameters validation failed: {str(e)}"""))
+        raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
 
     except Exception as e:
         print(format_error_text("Failed to load the correlation config parameters"))
+        raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
+
 
     # Convert the metrics to a list
     if isinstance(correlation_parameters_config['metrics'], str):
@@ -134,6 +135,8 @@ def calculate_correlation(
                   
         else:
             print(format_error_text(f"  Optimization strategy {correlation_parameters_config['optimization_strategy'].lower()} is invalid. Choose strategy `negative` or `low`"))
+            raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
+
 
         # If filter flag is true
         if correlation_parameters_config['filter']['filter_n_pairs'] or correlation_parameters_config['filter']['filter_inverse_threshold']:
@@ -150,11 +153,11 @@ def calculate_correlation(
 
                     # If the result is an empty matrix
                     if filtered_pairs_df.empty:
-                        print(format_error_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
+                        print(format_warn_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
 
                     # If rows less than the top_n_pairs value
                     elif filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
-                        print(format_info_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
+                        print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
 
                     else:
                         filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
@@ -162,6 +165,8 @@ def calculate_correlation(
                 # Else raise an error
                 else:
                     print(format_error_text(f"  Optimization strategy {correlation_parameters_config['optimization_strategy'].lower()} cannot be used with filter `filter_inverse_threshold`"))
+                    raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
+
 
             # If only n_pairs are true
             elif correlation_parameters_config['filter']['filter_n_pairs']:
@@ -171,7 +176,7 @@ def calculate_correlation(
                 
                 # If rows less than the top_n_pairs value
                 if filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
-                    print(format_info_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
+                    print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
 
                 else:
                     filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
@@ -185,7 +190,7 @@ def calculate_correlation(
 
                 # If the result is an empty matrix
                 if filtered_pairs_df.empty:
-                        print(format_error_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
+                        print(format_warn_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
 
         else:
             filtered_pairs_df = pairs_df
