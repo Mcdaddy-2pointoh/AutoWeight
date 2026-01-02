@@ -292,7 +292,9 @@ def raw_valuation_score_computation(config_path: str | Path,
 
             if verbose:
                 print(format_info_text(f"       Final DF shape: {all_score_df.shape}"))
-                print()
+        
+        if verbose:
+            print()
 
     if verbose:
         print(format_success_text("Valuation Scores computed and merged into a single DataFrame"))
