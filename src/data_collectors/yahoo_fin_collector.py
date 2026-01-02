@@ -1,17 +1,20 @@
+# External imports
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import List, Union
 from pathlib import Path
-from src.utils.file_operators import load_yaml, save_dataframe
 from datetime import datetime, timedelta
+from typing import Dict
+
+# Internal imports
+from src.utils.file_operators import load_yaml, save_dataframe
 from src.utils.text_operators import format_error_text, format_info_text, format_success_text
 
 def fetch_data(
         config_path: str | Path, 
         save_data: bool = True,
         verbose: bool = False
-    ) -> pd.DataFrame:
+    ) -> Dict[str, pd.DataFrame]:
     
     """
     Function: Accepts and loads the config file from the specified path. Downloads the ticker level data and produces a version controlled dataframe of all the tickers metrics (OHLCV) 
