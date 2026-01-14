@@ -1,2 +1,2 @@
-# AutoWeight
+# AutoWeight (Work In Progres)
 A lightweight, configurable investment-weighting engine that dynamically allocates capital across multiple assets using real-time market data. The tool is designed to compute optimal portfolio weightings based on current market conditions, enabling systematic and repeatable rebalancing. It is particularly useful for long-term investment strategies where periodic, data-driven portfolio rebalancing is required to manage risk and maintain desired exposure across asset cycles.
