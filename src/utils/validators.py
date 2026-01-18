@@ -147,3 +147,36 @@ def validate_valuation_config(config: Dict[str, Any]) -> None:
     if not isinstance(apply_bounding_flag, bool):
         raise ConfigValidationError("apply_bounding_flag in [parameters -> valuation] must be a boolean")
     
+
+def validate_create_portfolio_universe_config(config: Dict[str, Any]) -> None:
+    """
+    Function: Validates the portfolio universe configs
+
+    Raises:
+        ConfigValidationError
+    """
+
+    # Required Keys
+    required_keys = {
+        "correlation_anchor_points",
+        "max_bucket_size"
+    }
+
+    missing = required_keys - config.keys()
+
+    if missing:
+        raise ConfigValidationError(f"Missing keys in [parameters -> portfolio_params]: {missing}")
+    
+    if (config['correlation_anchor_points'] < 1) or type(config['correlation_anchor_points']) != int:
+        raise ConfigValidationError("correlation_anchor_points in [parameters -> portfolio_params] must be an integer greater than 1")
+    
+    if (config['max_bucket_size'] is not None) and (config['max_bucket_size'] < 1 or type(config['max_bucket_size']) != int):
+        raise ConfigValidationError("max_bucket_size in [parameters -> portfolio_params] must be an integer greater than 1 or NULL")
+    
+    
+
+
+    
+
+
+    
