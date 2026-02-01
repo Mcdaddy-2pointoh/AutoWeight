@@ -59,14 +59,20 @@ def fetch_data(
                 end=end_date,
                 interval="1d",
                 progress=False,
-                auto_adjust=False
+                auto_adjust=False,
             )
 
-            if verbose:
+            # If an empty df raise error
+            if temp_df.shape[0] == 0:
+                print(format_error_text(f"Possible Delising or Incorrect Name for ticker: {ticker}"))
+                print()
+                continue
+
+            elif verbose:
                 print(format_success_text(f"Successfully downloaded data for: {ticker}"))
 
         except:
-            print(format_error_text(f"Failed to load data for: {ticker}"))
+            raise ValueError(format_error_text(f"Failed to load data for: {ticker}"))
 
         if verbose:
             print(format_info_text(f"Processing data for ticker: {ticker}"))

@@ -4,7 +4,7 @@ class ConfigValidationError(ValueError):
     """Raised when config validation fails."""
 
 
-def validate_correlation_config(config: Dict[str, Any]) -> None:
+def validate_pairwise_correlation_config(config: Dict[str, Any]) -> None:
     """
     Validate correlation configuration parameters.
 
@@ -57,8 +57,6 @@ def validate_correlation_config(config: Dict[str, Any]) -> None:
     required_filter_keys = {
         "filter_n_pairs",
         "top_n_pairs",
-        "filter_inverse_threshold",
-        "inverse_threshold",
     }
 
     missing_filter = required_filter_keys - filter_cfg.keys()
@@ -70,15 +68,6 @@ def validate_correlation_config(config: Dict[str, Any]) -> None:
 
     if not isinstance(filter_cfg["top_n_pairs"], int) or filter_cfg["top_n_pairs"] <= 0:
         raise ConfigValidationError("top_n_pairs in [parameters -> correlation -> filter] must be a positive integer")
-
-    if not isinstance(filter_cfg["filter_inverse_threshold"], bool):
-        raise ConfigValidationError("filter_inverse_threshold in [parameters -> correlation -> filter] must be boolean")
-
-    inverse_threshold = filter_cfg["inverse_threshold"]
-    if not isinstance(inverse_threshold, (int, float)) or not -1 <= inverse_threshold <= 1:
-        raise ConfigValidationError(
-            "inverse_threshold in [parameters -> correlation -> filter] must be a number between -1 and 1"
-        )
 
     # Minimum obsvs needed for calculating corr must be specified
     min_obs = config["min_observations"]
@@ -157,4 +146,37 @@ def validate_valuation_config(config: Dict[str, Any]) -> None:
     apply_bounding_flag = config['apply_bounding']
     if not isinstance(apply_bounding_flag, bool):
         raise ConfigValidationError("apply_bounding_flag in [parameters -> valuation] must be a boolean")
+    
+
+def validate_create_portfolio_universe_config(config: Dict[str, Any]) -> None:
+    """
+    Function: Validates the portfolio universe configs
+
+    Raises:
+        ConfigValidationError
+    """
+
+    # Required Keys
+    required_keys = {
+        "correlation_anchor_points",
+        "max_bucket_size"
+    }
+
+    missing = required_keys - config.keys()
+
+    if missing:
+        raise ConfigValidationError(f"Missing keys in [parameters -> portfolio_params]: {missing}")
+    
+    if (config['correlation_anchor_points'] < 1) or type(config['correlation_anchor_points']) != int:
+        raise ConfigValidationError("correlation_anchor_points in [parameters -> portfolio_params] must be an integer greater than 1")
+    
+    if (config['max_bucket_size'] is not None) and (config['max_bucket_size'] < 1 or type(config['max_bucket_size']) != int):
+        raise ConfigValidationError("max_bucket_size in [parameters -> portfolio_params] must be an integer greater than 1 or NULL")
+    
+    
+
+
+    
+
+
     

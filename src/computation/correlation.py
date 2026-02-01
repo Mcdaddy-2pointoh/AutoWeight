@@ -2,13 +2,12 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from itertools import combinations
 from typing import Dict
 
 # Specialised imports
 from src.utils.text_operators import format_error_text, format_info_text, format_success_text, format_warn_text
 from src.utils.file_operators import load_latest_dataframe, load_yaml, save_dataframe
-from src.utils.validators import validate_correlation_config
+from src.utils.validators import validate_pairwise_correlation_config, ConfigValidationError
 
 def pct_change_calculator(df: pd.DataFrame, drop_na: bool = False) -> Dict[str, pd.DataFrame]:
     """
@@ -27,14 +26,14 @@ def pct_change_calculator(df: pd.DataFrame, drop_na: bool = False) -> Dict[str, 
         return df.pct_change()
 
 
-def calculate_correlation(
+def calculate_pairwise_corrrelation(
         config_path: str | Path, 
         save_data: bool = True,
         verbose: bool = False
     ) -> pd.DataFrame:
 
     """
-    Function: Computes the correlation for all metrics listed in the config
+    Function: Computes the pair level correlation for all TICEKRS listed in the config
     Args:
         config_path (str | Path): Path to the config file
         save_data (bool): Saves the data at specified path
@@ -47,9 +46,9 @@ def calculate_correlation(
 
     # Validate the config params
     try:
-        validate_correlation_config(correlation_parameters_config)
+        validate_pairwise_correlation_config(correlation_parameters_config)
 
-    except ValueError as e:
+    except ConfigValidationError as e:
         print(format_error_text(f"""Correlation parameters validation failed: {str(e)}"""))
         raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
 
@@ -139,58 +138,16 @@ def calculate_correlation(
 
 
         # If filter flag is true
-        if correlation_parameters_config['filter']['filter_n_pairs'] or correlation_parameters_config['filter']['filter_inverse_threshold']:
+        if correlation_parameters_config['filter']['filter_n_pairs']:
+            filtered_pairs_df = pairs_df
+            filtered_pairs_df.sort_values("adjusted_corr", ascending=True, inplace=True) 
             
-            # If both flags are true 
-            if correlation_parameters_config['filter']['filter_n_pairs'] and correlation_parameters_config['filter']['filter_inverse_threshold']:
+            # If rows less than the top_n_pairs value
+            if filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
+                print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
 
-                # Inverse threshold works only when strategy is negative
-                if correlation_parameters_config['optimization_strategy'].lower() == "negative":
-                    
-                    # Filter the pairs based on inverse threshold
-                    filtered_pairs_df = pairs_df[pairs_df['adjusted_corr'] > correlation_parameters_config['filter']['inverse_threshold']]
-                    filtered_pairs_df.sort_values("adjusted_corr", ascending=False, inplace=True) 
-
-                    # If the result is an empty matrix
-                    if filtered_pairs_df.empty:
-                        print(format_warn_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
-
-                    # If rows less than the top_n_pairs value
-                    elif filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
-                        print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
-
-                    else:
-                        filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
-                
-                # Else raise an error
-                else:
-                    print(format_error_text(f"  Optimization strategy {correlation_parameters_config['optimization_strategy'].lower()} cannot be used with filter `filter_inverse_threshold`"))
-                    raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
-
-
-            # If only n_pairs are true
-            elif correlation_parameters_config['filter']['filter_n_pairs']:
-
-                filtered_pairs_df = pairs_df
-                filtered_pairs_df.sort_values("adjusted_corr", ascending=True, inplace=True) 
-                
-                # If rows less than the top_n_pairs value
-                if filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
-                    print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
-
-                else:
-                    filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
-
-
-            elif correlation_parameters_config['filter']['filter_inverse_threshold']:
-
-                # Filter the pairs based on inverse threshold
-                filtered_pairs_df = pairs_df[pairs_df['adjusted_corr'] > np.abs(correlation_parameters_config['filter']['inverse_threshold'])]
-                filtered_pairs_df.sort_values("adjusted_corr", ascending=False, inplace=True) 
-
-                # If the result is an empty matrix
-                if filtered_pairs_df.empty:
-                        print(format_warn_text(f"  Filtering strategy due to `inverse_threshold` yeilds an empty dataframe. Reduce the threshold"))
+            else:
+                filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
 
         else:
             filtered_pairs_df = pairs_df
@@ -202,6 +159,10 @@ def calculate_correlation(
         # Reset index for filtered pairs
         filtered_pairs_df = filtered_pairs_df[['ticker_1', 'ticker_2', 'correlation', 'adjusted_corr']]
         filtered_pairs_df.reset_index(drop=True, inplace=True)
+
+        # Calculate the absolute correlation
+        pairs_df['abs_corr'] = np.abs(pairs_df['correlation'])
+        filtered_pairs_df['abs_corr'] = np.abs(filtered_pairs_df['correlation'])
 
         # Save the intermediate files
         if save_data:
