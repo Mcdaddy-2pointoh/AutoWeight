@@ -55,6 +55,11 @@ def create_portfolio_universe(
         suffix="adj_close"
     )
 
+    # Process the correlation matrix
+    corr_martix_df.rename(columns={'Unnamed: 0': 'securities'}, inplace=True)
+    corr_martix_df.set_index(corr_martix_df['securities'], drop=True, inplace=True)
+    corr_martix_df.drop(columns=['securities'], inplace=True)
+
     # Print the gloabl correlation caluclation has begun
     if verbose:
         print(format_success_text("Loaded the latest correlation Matrix"))
@@ -79,7 +84,7 @@ def create_portfolio_universe(
     # Else filter the global correlation
     else:       
         if verbose:
-            print(format_info_text(f"Filtering global correlation to loowest globally correlated {corr_universe_params['correlation_anchor_points']} anchor points"))
+            print(format_info_text(f"Filtering global correlation to lowest globally correlated {corr_universe_params['correlation_anchor_points']} anchor points"))
         anchors = anchors[:corr_universe_params['correlation_anchor_points']]
 
     # GC
@@ -93,15 +98,6 @@ def create_portfolio_universe(
         print() 
         print(format_info_text("Finding Optimal Buckets"))
 
+    # Find optimal buckets
+
     return anchors
-    
-
-    
-
-
-
-
-
-
-
-    

@@ -95,7 +95,7 @@ def calculate_pairwise_corrrelation(
         # Calculate correlation
         if verbose:
             print(format_info_text(f"   Calculating Correlation for PCT Change for {metric} metric of data"))
-
+     
         corr_matrix = pct_changed_df.corr(method=correlation_parameters_config['method'])
 
         # Calculate the upper triangular matrix for getting unique values only for corr
