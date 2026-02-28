@@ -55,14 +55,16 @@ def create_portfolio_universe(
         suffix="adj_close"
     )
 
+    # Process the correlation matrix
+    corr_martix_df.rename(columns={'Unnamed: 0': 'securities'}, inplace=True)
+    corr_martix_df.set_index(corr_martix_df['securities'], drop=True, inplace=True)
+    corr_martix_df.drop(columns=['securities'], inplace=True)
+
     # Print the gloabl correlation caluclation has begun
     if verbose:
         print(format_success_text("Loaded the latest correlation Matrix"))
         print()
         print(format_info_text("Calculating the Global Correlation for all securities in correlation matrix"))
-
-    # Calculate the absolute value for the correlation matrix, to eliminate directionality
-    abs_corr_martix_df = np.abs(corr_martix_df)
 
     # Process values such that the diagonal elements are considered as NaN, to eliminate self correlation
     np.fill_diagonal(abs_corr_martix_df.values, np.nan)
@@ -94,14 +96,3 @@ def create_portfolio_universe(
         print(format_info_text("Finding Optimal Buckets"))
 
     return anchors
-    
-
-    
-
-
-
-
-
-
-
-    
