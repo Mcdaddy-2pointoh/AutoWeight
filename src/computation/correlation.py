@@ -119,50 +119,16 @@ def calculate_pairwise_corrrelation(
 
 
         # Adjust correlation for the optimization strategy defined & identify pairs
-        if correlation_parameters_config['optimization_strategy'].lower() == "low":
-            pairs_df["adjusted_corr"] = pairs_df["correlation"].abs()
-            pairs_df.sort_values("adjusted_corr", inplace=True)
-            pairs_df.reset_index(drop=True, inplace=True)
-
-
-        elif correlation_parameters_config['optimization_strategy'].lower() == "negative":
-            pairs_df['adjusted_corr'] = np.where(pairs_df["correlation"] < 0, 
-                                                 pairs_df["correlation"].abs(),
-                                                 0)
-            pairs_df.sort_values("adjusted_corr", ascending=False, inplace=True)
-            pairs_df.reset_index(drop=True, inplace=True)
-                  
-        else:
-            print(format_error_text(f"  Optimization strategy {correlation_parameters_config['optimization_strategy'].lower()} is invalid. Choose strategy `negative` or `low`"))
-            raise RuntimeError(format_error_text("Correlation Pipeline Failed"))
-
-
-        # If filter flag is true
-        if correlation_parameters_config['filter']['filter_n_pairs']:
-            filtered_pairs_df = pairs_df
-            filtered_pairs_df.sort_values("adjusted_corr", ascending=True, inplace=True) 
-            
-            # If rows less than the top_n_pairs value
-            if filtered_pairs_df.shape[0] < correlation_parameters_config['filter']['top_n_pairs']:
-                print(format_warn_text(f"  Number of filtered pairs are less than the `top_n_pairs` config set at {correlation_parameters_config['filter']['top_n_pairs']}. Saving all pairs"))
-
-            else:
-                filtered_pairs_df = filtered_pairs_df[:correlation_parameters_config['filter']['top_n_pairs']]
-
-        else:
-            filtered_pairs_df = pairs_df
+        pairs_df["adjusted_corr"] = pairs_df["correlation"].abs()
+        pairs_df.sort_values("adjusted_corr", inplace=True)
+        pairs_df.reset_index(drop=True, inplace=True)
 
         # Reset index for filtered pairs
         pairs_df = pairs_df[['ticker_1', 'ticker_2', 'correlation', 'adjusted_corr']]
         pairs_df.reset_index(drop=True, inplace=True)
 
-        # Reset index for filtered pairs
-        filtered_pairs_df = filtered_pairs_df[['ticker_1', 'ticker_2', 'correlation', 'adjusted_corr']]
-        filtered_pairs_df.reset_index(drop=True, inplace=True)
-
         # Calculate the absolute correlation
         pairs_df['abs_corr'] = np.abs(pairs_df['correlation'])
-        filtered_pairs_df['abs_corr'] = np.abs(filtered_pairs_df['correlation'])
 
         # Save the intermediate files
         if save_data:
@@ -200,17 +166,6 @@ def calculate_pairwise_corrrelation(
                 save_index=False
             )
 
-            # Save filtered pairs
-            save_dataframe(
-                df=filtered_pairs_df,
-                directory=data_path_config['filtered_pairs_matrix']['directory'],
-                file_name=data_path_config['filtered_pairs_matrix']['file_name'],
-                file_format=data_path_config['filtered_pairs_matrix']['file_format'],
-                suffix=metric,
-                versioned=True,
-                save_index=False
-            )
-
             if verbose:
                 print(format_success_text(f"   Correlation Pipeline for {metric} metric of dataframes, are saved."))
 
@@ -219,7 +174,6 @@ def calculate_pairwise_corrrelation(
             "pct_changed_df" : pct_changed_df,
             "corr_matrix" : corr_matrix,
             "pairs_df" : pairs_df,
-            "filtered_pairs_df" : filtered_pairs_df
         }
 
         if verbose:

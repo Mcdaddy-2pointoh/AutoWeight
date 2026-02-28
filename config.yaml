@@ -70,7 +70,7 @@ config:
     correlation:
 
       # Method of correlation to use
-      method: pearson # OPTIONAL: kendall | spearman
+      method: spearman # OPTIONAL: kendall | spearman
       
       # Metric to see the correlation in
       metrics:
@@ -80,37 +80,13 @@ config:
         - close
         - adj_close
 
-      # Number of top pairs to return
-      filter:
-        filter_n_pairs: TRUE
-        top_n_pairs: 10
-        filter_inverse_threshold: FALSE
-        inverse_threshold: -0.10
-
-
       # Minimum obsv for corr
       min_observations: 60
 
-      # Optimize to find equities for low, negative
-      optimization_strategy: negative
-
-    valuation:
-
-      # Method to perform valuation
-      # Options are ['price_z_score', 'log_price_z_score', 'log_return_z_score', 'all']
-      method: log_return_z_score 
-
-      # Rolling Window to calculate the valuation for
-      window_in_days: 400
-
-      # Metric used to compute the valuation are
-      metric: adj_close
-
-      # Clip values
-      clip: 0
-
-      # Bounded Flag
-      apply_bounding: TRUE
-
     portfolio_params:
-      number_of_securities: 10
+
+      # Anchor points
+      correlation_anchor_points: 5
+
+      # Max bucket Size, Can be positive int or NULL  
+      max_bucket_size: 8
