@@ -70,7 +70,9 @@ def create_portfolio_universe(
     abs_corr_martix_df = np.abs(corr_martix_df)
 
     # Process values such that the diagonal elements are considered as NaN, to eliminate self correlation
-    np.fill_diagonal(abs_corr_martix_df.values, np.nan)
+    abs_corr_martix_df = abs_corr_martix_df.mask(
+    np.eye(len(abs_corr_martix_df), dtype=bool)
+)
 
     # Average Global correlation
     global_corr = abs_corr_martix_df.mean(axis=1)
@@ -98,4 +100,4 @@ def create_portfolio_universe(
         print() 
         print(format_info_text("Finding Optimal Buckets"))
 
-    return anchors
+    return anchors , global_corr_sorted

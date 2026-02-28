@@ -24,19 +24,19 @@ config:
       file_format: "csv"
       versioned: TRUE
 
-    valuation_input_matrix:      
+    valuation_input_matrix:
       directory: "basepath/02_processed/valuation_input_matrix"
       file_name: "valuation_input_matrix"
       file_format: "csv"
       versioned: TRUE
 
-    valuation_scores_full_matrix:      
+    valuation_scores_full_matrix:
       directory: "basepath/02_processed/valuation_scores_matrix"
       file_name: "valuation_scores_matrix"
       file_format: "csv"
       versioned: TRUE
 
-    valuation_scores_latest_matrix:      
+    valuation_scores_latest_matrix:
       directory: "basepath/03_analysis/valuation/valuation_scores_latest_matrix"
       file_name: "valuation_scores_matrix"
       file_format: "csv"
@@ -55,23 +55,33 @@ config:
       versioned: TRUE
 
   data:
-
     # Tickers must be yfin compliant
     tickers:
       - HDFCSML250.NS
       - HDFCGOLD.NS
       - HDFCNEXT50.NS
-    
+      - AMBUJACEM.NS
+      - ASIANPAINT.NS
+      - EIDPARRY.NS
+      - ETERNAL.NS
+      - GMRAIRPORT.NS
+      - HDFCBANK.NS
+      - ABC.NS
+      - ITC.NS
+      - LLOYDSME.NS
+      - NBCC.NS
+      - OLECTRA.NS
+      - PCBL.NS
+
     # Must be less than 3 years
     window_in_days: 900
     vix: ^INDIAVIX
 
   parameters:
     correlation:
-
       # Method of correlation to use
       method: spearman # OPTIONAL: kendall | spearman
-      
+
       # Metric to see the correlation in
       metrics:
         - open
@@ -84,9 +94,8 @@ config:
       min_observations: 60
 
     portfolio_params:
-
       # Anchor points
       correlation_anchor_points: 5
 
-      # Max bucket Size, Can be positive int or NULL  
+      # Max bucket Size, Can be positive int or NULL
       max_bucket_size: 8
