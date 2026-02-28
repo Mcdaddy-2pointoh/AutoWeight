@@ -66,6 +66,9 @@ def create_portfolio_universe(
         print()
         print(format_info_text("Calculating the Global Correlation for all securities in correlation matrix"))
 
+    # Calculate the absolute value for the correlation matrix, to eliminate directionality
+    abs_corr_martix_df = np.abs(corr_martix_df)
+
     # Process values such that the diagonal elements are considered as NaN, to eliminate self correlation
     np.fill_diagonal(abs_corr_martix_df.values, np.nan)
 
