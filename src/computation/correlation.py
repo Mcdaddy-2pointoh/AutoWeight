@@ -90,7 +90,7 @@ def calculate_pairwise_corrrelation(
         if verbose:
             print(format_info_text(f"   Calculating PCT Change for {metric} metric of data"))
 
-        pct_changed_df = pct_change_calculator(df=temp_metric_df, drop_na=True)
+        pct_changed_df = pct_change_calculator(df=temp_metric_df, drop_na=False)
 
         # Calculate correlation
         if verbose:
@@ -183,4 +183,3 @@ def calculate_pairwise_corrrelation(
 
     print(format_success_text(f"Correlation Pipeline complete!"))
     return correlation_results
-    

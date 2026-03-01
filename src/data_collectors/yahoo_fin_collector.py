@@ -91,7 +91,8 @@ def fetch_data(
         high_temp_df = pd.DataFrame(high_temp_series).rename(columns={'High': ticker})
         low_temp_df = pd.DataFrame(low_temp_series).rename(columns={'Low': ticker})
         volume_temp_df = pd.DataFrame(volume_temp_series).rename(columns={'Volume': ticker})
-        adj_close_temp_df = pd.DataFrame(adj_close_temp_series).rename(columns={'Adj Close': ticker})
+        adj_close_temp_df = pd.DataFrame(adj_close_temp_series).rename(columns={'Adj'
+        ' Close': ticker})
 
         # Check if open data frame is None
         # If none use the open_temp_df as a main df
@@ -105,7 +106,8 @@ def fetch_data(
                 left=old_df,
                 right=open_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['open'] = merged_df
 
@@ -124,7 +126,8 @@ def fetch_data(
                 left=old_df,
                 right=high_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['high'] = merged_df
 
@@ -143,7 +146,8 @@ def fetch_data(
                 left=old_df,
                 right=low_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['low'] = merged_df
 
@@ -162,7 +166,8 @@ def fetch_data(
                 left=old_df,
                 right=close_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['close'] = merged_df
 
@@ -181,7 +186,8 @@ def fetch_data(
                 left=old_df,
                 right=volume_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['volume'] = merged_df
 
@@ -201,7 +207,8 @@ def fetch_data(
                 left=old_df,
                 right=adj_close_temp_df,
                 right_index=True,
-                left_index=True
+                left_index=True,
+                how="outer"
             )
             ohlcv_data['adj_close'] = merged_df
 
